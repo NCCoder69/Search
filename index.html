@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Search with Suggestions</title>
+  <style>
+    #search-input {
+      width: 400px;
+      padding: 5px;
+      font-size: 16px;
+    }
+
+    #suggestions-list {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .suggestion-item {
+      padding: 5px;
+      cursor: pointer;
+    }
+
+    .suggestion-item:hover {
+      background-color: lightgray;
+    }
+  </style>
+</head>
+<body>
+  <input type="text" id="search-input" placeholder="Search" autocomplete="off">
+  <ul id="suggestions-list"></ul>
+
+  <script>
+    const searchInput = document.getElementById('search-input');
+    const suggestionsList = document.getElementById('suggestions-list');
+    let timeoutId;
+
+    searchInput.addEventListener('input', handleInput);
+
+    function handleInput(event) {
+      const searchTerm = event.target.value.trim();
+
+      if (searchTerm.length > 0) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          getSuggestions(searchTerm)
+            .then(renderSuggestions)
+            .catch(console.error);
+        }, 300);
+      } else {
+        clearSuggestions();
+      }
+    }
+
+    function getSuggestions(query) {
+      const url = `https://duckduckgo.com/html/?q=${query}`;
+      return fetch(url)
+        .then(response => response.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const suggestionElements = doc.querySelectorAll('.acp');
+          return Array.from(suggestionElements).map(element => element.textContent);
+        });
+    }
+
+    function renderSuggestions(suggestions) {
+      clearSuggestions();
+
+      suggestions.forEach(suggestion => {
+        const suggestionItem = document.createElement('li');
+        suggestionItem.classList.add('suggestion-item');
+        suggestionItem.textContent = suggestion;
+        suggestionItem.addEventListener('click', () => {
+          searchInput.value = suggestion;
+          clearSuggestions();
+          performSearch();
+        });
+
+        suggestionsList.appendChild(suggestionItem);
+      });
+    }
+
+    function clearSuggestions() {
+      suggestionsList.innerHTML = '';
+    }
+
+    function performSearch() {
+      const searchTerm = searchInput.value.trim();
+      // Add your code to perform the search using the search term
+      console.log(`Performing search for: ${searchTerm}`);
+    }
+  </script>
+</body>
+</html>
